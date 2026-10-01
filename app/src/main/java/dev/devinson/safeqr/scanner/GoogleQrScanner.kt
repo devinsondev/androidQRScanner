@@ -1,9 +1,9 @@
 package dev.devinson.safeqr.scanner
 
 import android.app.Activity
-import com.google.android.gms.mlkit.barcode.Barcode
-import com.google.android.gms.mlkit.codescanner.GmsBarcodeScannerOptions
-import com.google.android.gms.mlkit.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 class GoogleQrScanner(activity: Activity) {
     private val scanner = GmsBarcodeScanning.getClient(
