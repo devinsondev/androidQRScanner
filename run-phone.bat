@@ -24,7 +24,7 @@ if exist "%CD%\gradlew.bat" (
 )
 
 set "BOOTSTRAP_GRADLE="
-for /r "%USERPROFILE%\.gradle\wrapper\dists\gradle-9.4.0-bin" %%F in (gradle.bat) do (
+for /f "delims=" %%F in ('dir /s /b "%USERPROFILE%\.gradle\wrapper\dists\gradle-9.4.0-bin\gradle.bat" 2^>nul') do (
     if not defined BOOTSTRAP_GRADLE set "BOOTSTRAP_GRADLE=%%F"
 )
 
@@ -33,6 +33,8 @@ if not defined BOOTSTRAP_GRADLE (
     echo Expected under: %USERPROFILE%\.gradle\wrapper\dists\gradle-9.4.0-bin
     goto :fail
 )
+
+echo Bootstrap Gradle: %BOOTSTRAP_GRADLE%
 
 set "TMP_WRAPPER=%TEMP%\androidQRScanner-gradle-wrapper"
 if exist "%TMP_WRAPPER%" rmdir /s /q "%TMP_WRAPPER%"
