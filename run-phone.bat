@@ -10,16 +10,28 @@ set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-t
 set "APP_ID=dev.devinson.safeqr"
 set "ACTIVITY=.MainActivity"
 set "APK=%CD%\app\build\outputs\apk\debug\app-debug.apk"
+set "GRADLE_VERSION=8.13"
+set "GRADLE_SHA256=20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78"
 
 echo.
-echo [1/5] Updating repository...
+echo [1/6] Updating repository...
 git pull --ff-only
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/5] Preparing Gradle...
+echo [2/6] Preparing verified Gradle...
 if exist "%CD%\gradlew.bat" (
     set "GRADLE_CMD=%CD%\gradlew.bat"
+    set "WRAPPER_PROPS=%CD%\gradle\wrapper\gradle-wrapper.properties"
+    if not exist "%WRAPPER_PROPS%" (
+        echo ERROR: gradlew.bat exists but gradle-wrapper.properties is missing.
+        goto :fail
+    )
+    findstr /b /c:"distributionSha256Sum=" "%WRAPPER_PROPS%" >nul
+    if errorlevel 1 (
+        echo ERROR: Wrapper has no distributionSha256Sum. Refusing unverified Gradle download.
+        goto :fail
+    )
     goto :gradle_ready
 )
 
@@ -30,7 +42,6 @@ for /f "delims=" %%F in ('dir /s /b "%USERPROFILE%\.gradle\wrapper\dists\gradle-
 
 if not defined BOOTSTRAP_GRADLE (
     echo ERROR: gradlew.bat is missing and cached Gradle 9.4.0 was not found.
-    echo Expected under: %USERPROFILE%\.gradle\wrapper\dists\gradle-9.4.0-bin
     goto :fail
 )
 
@@ -41,14 +52,26 @@ if exist "%TMP_WRAPPER%" rmdir /s /q "%TMP_WRAPPER%"
 mkdir "%TMP_WRAPPER%"
 > "%TMP_WRAPPER%\settings.gradle.kts" echo rootProject.name = "bootstrap"
 
-call "%BOOTSTRAP_GRADLE%" -p "%TMP_WRAPPER%" wrapper --gradle-version 8.13
+call "%BOOTSTRAP_GRADLE%" -p "%TMP_WRAPPER%" wrapper --gradle-version %GRADLE_VERSION% --distribution-type bin --gradle-distribution-sha256-sum %GRADLE_SHA256%
 if errorlevel 1 goto :fail
+
+set "WRAPPER_PROPS=%TMP_WRAPPER%\gradle\wrapper\gradle-wrapper.properties"
+findstr /c:"distributionUrl=https\://services.gradle.org/distributions/gradle-%GRADLE_VERSION%-bin.zip" "%WRAPPER_PROPS%" >nul
+if errorlevel 1 (
+    echo ERROR: Unexpected Gradle distribution URL.
+    goto :fail
+)
+findstr /c:"distributionSha256Sum=%GRADLE_SHA256%" "%WRAPPER_PROPS%" >nul
+if errorlevel 1 (
+    echo ERROR: Gradle SHA-256 was not written correctly.
+    goto :fail
+)
 
 set "GRADLE_CMD=%TMP_WRAPPER%\gradlew.bat"
 
 :gradle_ready
 echo.
-echo [3/5] Building debug APK...
+echo [3/6] Building debug APK...
 call "%GRADLE_CMD%" -p "%CD%" :app:assembleDebug
 if errorlevel 1 goto :fail
 
@@ -59,7 +82,7 @@ if not exist "%APK%" (
 )
 
 echo.
-echo [4/5] Installing on connected Android device...
+echo [4/6] Checking ADB device...
 adb get-state >nul 2>&1
 if errorlevel 1 (
     echo ERROR: No single authorized Android device is available through ADB.
@@ -67,11 +90,13 @@ if errorlevel 1 (
     goto :fail
 )
 
+echo.
+echo [5/6] Installing APK...
 adb install -r "%APK%"
 if errorlevel 1 goto :fail
 
 echo.
-echo [5/5] Launching app...
+echo [6/6] Launching app...
 adb shell am force-stop %APP_ID% >nul 2>&1
 adb shell am start -n %APP_ID%/%ACTIVITY%
 if errorlevel 1 goto :fail
