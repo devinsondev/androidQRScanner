@@ -27,7 +27,7 @@ class GoogleQrScanner(activity: Activity) {
                     onResult(value)
                 }
             }
-            .addOnCanceledListener(onCanceled)
-            .addOnFailureListener(onFailure)
+            .addOnCanceledListener { onCanceled() }
+            .addOnFailureListener { error -> onFailure(error) }
     }
 }
