@@ -14,12 +14,12 @@ set "GRADLE_VERSION=8.13"
 set "GRADLE_SHA256=20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78"
 
 echo.
-echo [1/6] Updating repository...
+echo [1/7] Updating repository...
 git pull --ff-only
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/6] Preparing verified Gradle...
+echo [2/7] Preparing verified Gradle...
 if exist "%CD%\gradlew.bat" (
     set "GRADLE_CMD=%CD%\gradlew.bat"
     set "WRAPPER_PROPS=%CD%\gradle\wrapper\gradle-wrapper.properties"
@@ -45,8 +45,6 @@ if not defined BOOTSTRAP_GRADLE (
     goto :fail
 )
 
-echo Bootstrap Gradle: %BOOTSTRAP_GRADLE%
-
 set "TMP_WRAPPER=%TEMP%\androidQRScanner-gradle-wrapper"
 if exist "%TMP_WRAPPER%" rmdir /s /q "%TMP_WRAPPER%"
 mkdir "%TMP_WRAPPER%"
@@ -71,8 +69,16 @@ set "GRADLE_CMD=%TMP_WRAPPER%\gradlew.bat"
 
 :gradle_ready
 echo.
-echo [3/6] Building debug APK...
-call "%GRADLE_CMD%" -p "%CD%" :app:assembleDebug
+echo [3/7] Checking dependency verification metadata...
+if not exist "%CD%\gradle\verification-metadata.xml" (
+    echo ERROR: gradle\verification-metadata.xml is missing.
+    echo Run .\setup-dependency-verification.bat once, review the generated file, then commit it.
+    goto :fail
+)
+
+echo.
+echo [4/7] Building debug APK with strict dependency verification...
+call "%GRADLE_CMD%" -p "%CD%" --dependency-verification strict :app:assembleDebug
 if errorlevel 1 goto :fail
 
 if not exist "%APK%" (
@@ -82,7 +88,7 @@ if not exist "%APK%" (
 )
 
 echo.
-echo [4/6] Checking ADB device...
+echo [5/7] Checking ADB device...
 adb get-state >nul 2>&1
 if errorlevel 1 (
     echo ERROR: No single authorized Android device is available through ADB.
@@ -91,12 +97,12 @@ if errorlevel 1 (
 )
 
 echo.
-echo [5/6] Installing APK...
+echo [6/7] Installing APK...
 adb install -r "%APK%"
 if errorlevel 1 goto :fail
 
 echo.
-echo [6/6] Launching app...
+echo [7/7] Launching app...
 adb shell am force-stop %APP_ID% >nul 2>&1
 adb shell am start -n %APP_ID%/%ACTIVITY%
 if errorlevel 1 goto :fail
