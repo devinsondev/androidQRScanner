@@ -36,4 +36,22 @@ class QrContentAnalyzerTest {
         assertEquals("Wi-Fi password: hunter2", result.text)
         assertNull(result.safeWebUrl)
     }
+
+    @Test
+    fun preservesWhitespaceForCopyAndSharing() {
+        val raw = "  first line\nsecond line  "
+        val result = analyzer.analyze(raw)
+
+        assertEquals(raw, result.text)
+        assertNull(result.safeWebUrl)
+    }
+
+    @Test
+    fun detectsLinkWithoutChangingOriginalText() {
+        val raw = " https://example.com/ "
+        val result = analyzer.analyze(raw)
+
+        assertEquals(raw, result.text)
+        assertEquals("https://example.com/", result.safeWebUrl)
+    }
 }
