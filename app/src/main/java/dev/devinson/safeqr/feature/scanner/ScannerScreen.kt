@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,6 +31,8 @@ fun ScannerScreen(
     state: ScannerUiState,
     onScan: () -> Unit,
     onOpenUrl: (String) -> Unit,
+    onCopy: (String) -> Unit,
+    onShare: (String) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -70,6 +73,8 @@ fun ScannerScreen(
                 is ScannerUiState.Result -> ResultContent(
                     content = state.content,
                     onOpenUrl = onOpenUrl,
+                    onCopy = onCopy,
+                    onShare = onShare,
                 )
             }
         }
@@ -80,6 +85,8 @@ fun ScannerScreen(
 private fun ResultContent(
     content: QrContent,
     onOpenUrl: (String) -> Unit,
+    onCopy: (String) -> Unit,
+    onShare: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -90,6 +97,19 @@ private fun ResultContent(
             text = content.text,
             fontFamily = FontFamily.Monospace,
         )
+
+        OutlinedButton(
+            onClick = { onCopy(content.text) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Копировать")
+        }
+        OutlinedButton(
+            onClick = { onShare(content.text) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Поделиться")
+        }
 
         val url = content.safeWebUrl
         if (url != null) {
