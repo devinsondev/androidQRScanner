@@ -9,6 +9,14 @@ permissions:
   contents: read
 
 jobs:
+  verify-windows-wrapper:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Gradle Wrapper checksums and URL on Windows
+        shell: pwsh
+        run: .\\scripts\\verify-gradle-wrapper.ps1
+
   build:
     runs-on: ubuntu-latest
     steps:
