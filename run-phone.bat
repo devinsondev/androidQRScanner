@@ -5,7 +5,7 @@ cd /d "%~dp0"
 
 set "JAVA_HOME=D:\TOOLS\andrstdio\jbr"
 set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
-set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-tools\latest\bin;%PATH%"
+set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-tools\latest\bin;%SystemRoot%\System32;%SystemRoot%\System32\WindowsPowerShell\v1.0;%PATH%"
 
 set "APP_ID=dev.devinson.safeqr"
 set "ACTIVITY=.MainActivity"
@@ -25,7 +25,15 @@ echo [2/7] Verifying Gradle Wrapper 8.13...
 if not exist "%CD%\gradlew.bat" goto :wrapper_missing
 if not exist "%WRAPPER_JAR%" goto :wrapper_missing
 if not exist "%WRAPPER_PROPS%" goto :wrapper_missing
-powershell.exe -NoProfile -NonInteractive -Command "$actual = (Get-FileHash -LiteralPath $env:WRAPPER_JAR -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $env:WRAPPER_SHA256) { Write-Error ('Invalid wrapper JAR checksum: ' + $actual); exit 1 }"
+set "POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%POWERSHELL_EXE%" (
+    set "POWERSHELL_EXE=%ProgramFiles%\PowerShell\7\pwsh.exe"
+)
+if not exist "%POWERSHELL_EXE%" (
+    echo ERROR: Windows PowerShell or PowerShell 7 is required to verify the wrapper JAR.
+    goto :fail
+)
+"%POWERSHELL_EXE%" -NoProfile -NonInteractive -Command "$actual = (Get-FileHash -LiteralPath $env:WRAPPER_JAR -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $env:WRAPPER_SHA256) { Write-Error ('Invalid wrapper JAR checksum: ' + $actual); exit 1 }"
 if errorlevel 1 goto :fail
 findstr /b /c:"distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-all.zip" "%WRAPPER_PROPS%" >nul
 if errorlevel 1 goto :distribution_invalid
