@@ -9,6 +9,8 @@ fun ScannerRoute(
     viewModel: ScannerViewModel,
     onScan: () -> Unit,
     onOpenUrl: (String) -> Unit,
+    onCopy: (String) -> Unit,
+    onShare: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -16,5 +18,7 @@ fun ScannerRoute(
         state = state,
         onScan = onScan,
         onOpenUrl = onOpenUrl,
+        onCopy = onCopy,
+        onShare = onShare,
     )
 }
