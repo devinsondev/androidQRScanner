@@ -5,11 +5,10 @@ import java.util.Locale
 
 class QrContentAnalyzer {
     fun analyze(rawValue: String): QrContent {
-        val text = rawValue.trim()
-        val uri = parseSafeWebUri(text)
+        val uri = parseSafeWebUri(rawValue.trim())
 
         return QrContent(
-            text = text,
+            text = rawValue,
             safeWebUrl = uri?.toASCIIString(),
             host = uri?.host,
         )
