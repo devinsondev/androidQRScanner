@@ -10,10 +10,7 @@ set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-t
 set "APP_ID=dev.devinson.safeqr"
 set "ACTIVITY=.MainActivity"
 set "APK=%CD%\app\build\outputs\apk\debug\app-debug.apk"
-set "WRAPPER_JAR=%CD%\gradle\wrapper\gradle-wrapper.jar"
-set "WRAPPER_PROPS=%CD%\gradle\wrapper\gradle-wrapper.properties"
-set "WRAPPER_SHA256=81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f"
-set "DISTRIBUTION_SHA256=fba8464465835e74f7270bbf43d6d8a8d7709ab0a43ce1aa3323f73e9aa0c612"
+set "WRAPPER_VERIFIER=%CD%\scripts\verify-gradle-wrapper.ps1"
 
 echo.
 echo [1/7] Updating repository...
@@ -23,23 +20,17 @@ if errorlevel 1 goto :fail
 echo.
 echo [2/7] Verifying Gradle Wrapper 8.13...
 if not exist "%CD%\gradlew.bat" goto :wrapper_missing
-if not exist "%WRAPPER_JAR%" goto :wrapper_missing
-if not exist "%WRAPPER_PROPS%" goto :wrapper_missing
+if not exist "%WRAPPER_VERIFIER%" goto :wrapper_missing
 set "POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 if not exist "%POWERSHELL_EXE%" (
     set "POWERSHELL_EXE=%ProgramFiles%\PowerShell\7\pwsh.exe"
 )
 if not exist "%POWERSHELL_EXE%" (
-    echo ERROR: Windows PowerShell or PowerShell 7 is required to verify the wrapper JAR.
+    echo ERROR: Windows PowerShell or PowerShell 7 is required to verify the wrapper.
     goto :fail
 )
-"%POWERSHELL_EXE%" -NoProfile -NonInteractive -Command "$actual = (Get-FileHash -LiteralPath $env:WRAPPER_JAR -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $env:WRAPPER_SHA256) { Write-Error ('Invalid wrapper JAR checksum: ' + $actual); exit 1 }"
+"%POWERSHELL_EXE%" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%WRAPPER_VERIFIER%"
 if errorlevel 1 goto :fail
-findstr /b /c:"distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-all.zip" "%WRAPPER_PROPS%" >nul
-if errorlevel 1 goto :distribution_invalid
-findstr /b /c:"distributionSha256Sum=%DISTRIBUTION_SHA256%" "%WRAPPER_PROPS%" >nul
-if errorlevel 1 goto :distribution_invalid
-
 echo.
 echo [3/7] Checking strict dependency verification metadata...
 if not exist "%CD%\gradle\verification-metadata.xml" (
@@ -84,10 +75,6 @@ exit /b 0
 
 :wrapper_missing
 echo ERROR: Project Gradle Wrapper files are missing.
-goto :fail
-
-:distribution_invalid
-echo ERROR: Gradle distribution URL or SHA-256 differs from the pinned version.
 goto :fail
 
 :fail
